@@ -35,14 +35,13 @@ void sigIntHandler(int signum) {
 }
 
 int main (int argc, char *argv[]) {
-int i = 0, o = 0, terminate = 0;;
+int i = 0, o = 0, terminate = 0;
 struct timer reqlTime, termTime;
 int timeKey = atoi(argv[1]), childKey = atoi(argv[2]), index = atoi(argv[3]);
 int termKey = atoi(argv[4]);
 int resKey = atoi(argv[5]);
 myIndex = index;
 signal(SIGINT, sigIntHandler);
-unsigned int nextRes;
 
 srand(getpid() * time(NULL));
 

@@ -20,20 +20,13 @@ struct timer {
         unsigned int seconds;
 };
 
-struct resource {
-	unsigned int reqArray[18];
-        unsigned int allArray[18];
-        unsigned int relArray[18];
-        
-	int shared;
-        unsigned int allocation;
-        unsigned int release;	
-	unsigned int maxAmt;
-        unsigned int available;
-        unsigned int request;
+struct page {
+	int id;
+	int valid;
+	int dirty;
+	int readOrWrite;
 };
 
-FILE *out_file;
 key_t keyTime = 1234;
 key_t keyChild = 4321;
 key_t keyTerm = 1324;
@@ -43,7 +36,7 @@ int shmidC, shmidT, shmidR, shmidTime;
 struct timer *shmTimer;
 int *shmC;
 int *shmT;
-struct resource *shmR;
+struct page *shmP;
 sem_t * semD;
 sem_t * semT;
 sem_t * semC;
