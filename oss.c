@@ -74,6 +74,9 @@ int cycles = 0;
 int normTerm = 0;
 int pKill = -1; 
 float deadTermPercent = 0;
+message buf;
+buf.mtype = 1;
+buf.mint = 1000;
 
 // random number generator
 srand(getpid() * time(NULL));
@@ -91,6 +94,12 @@ while ((choice = getopt (argc, argv, "h")) != -1)
 			break;
 	}	
 }
+
+//Setup key for message queue
+key_t key = ftok("./parent.c", 7654);
+        
+//Setup id for message queue
+int msqid = msgget(key, 0644|IPC_CREAT);
 
 //Memory allocation
 shmidTime = shmget(keyTime, sizeof(struct timer), IPC_CREAT | 0666);
@@ -188,6 +197,11 @@ sprintf(childArgument, "%d", shmidC);
 sprintf(termArgument, "%d", shmidT);
 sprintf(resArgument, "%d", shmidR);
 pid_t pid;
+
+if (msgsnd(msqid, &buf, sizeof(buf), 0) == -1) {
+        perror("msgsnd");
+	exit(1);
+}
 do {
 
 	//Check if enough time has passed to spawn a child
@@ -222,10 +236,16 @@ do {
 			}
 		}
 	}
+	msgrcv(msqid, &buf, sizeof(buf), 1, 0);
 	// check memory request and releases	
 		
 	// FIFO algorithm
 	
+	buf.mint = 1000;
+	if (msgsnd(msqid, &buf, sizeof(buf), 0) == -1) {
+        	perror("msgsnd");
+                exit(1);
+        }
 	//check for terminating children
 	sem_wait(semT);
 	for(i = 0; i < maxChildren; i++) {

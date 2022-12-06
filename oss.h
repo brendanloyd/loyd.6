@@ -20,6 +20,11 @@ struct timer {
         unsigned int seconds;
 };
 
+struct message {
+	long mtype;
+	int mint;
+};
+
 struct page {
 	int id;
 	int valid;
