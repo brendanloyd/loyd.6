@@ -64,7 +64,7 @@ int main (int argc, char *argv[]) {
 FILE *out_file = fopen("./resources.log", "w");
 int i, j, k, m, choice;
 int children[17] = {0}; 
-int maxChildren = 40,maxTime = 5 ,numSlaves = 0 ,numProc = 0, verbose = 0;
+int maxChildren = 40,maxTime = 5 ,numSlaves = 0 ,numProc = 0;
 char buf[200];
 signal(SIGINT, sigIntHandler);
 time_t start, stop;
@@ -79,17 +79,13 @@ float deadTermPercent = 0;
 srand(getpid() * time(NULL));
 
 // option handler
-while ((choice = getopt (argc, argv, "hv")) != -1)
+while ((choice = getopt (argc, argv, "h")) != -1)
 {
 	switch (choice)
 	{
 		case 'h':
 			printf("This program simulates resource management in an operating system using the FIFO method\n");
-			printf("-v\tVerbose option: this option affects what information is saved in the log file.\nUsage:\t ./oss -v\n");
 			exit(1);
-			break;
-		case 'v':
-			verbose = 1;
 			break;
 		default:
 			break;
@@ -226,12 +222,9 @@ do {
 			}
 		}
 	}
-	
-	//check for SHARED resource requests and releases
-	
-	//check resource requests and releases
-	
-	// Deadlock algorithm
+	// check memory request and releases	
+		
+	// FIFO algorithm
 	
 	//check for terminating children
 	sem_wait(semT);

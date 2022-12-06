@@ -35,7 +35,7 @@ void sigIntHandler(int signum) {
 }
 
 int main (int argc, char *argv[]) {
-int i = 0, o = 0, terminate = 0;
+int i = 0, o = 0, terminate = 0, randomNumber = 0;
 struct timer reqlTime, termTime;
 int timeKey = atoi(argv[1]), childKey = atoi(argv[2]), index = atoi(argv[3]);
 int termKey = atoi(argv[4]);
@@ -96,9 +96,18 @@ if (reqlTime.ns > 1000000000) {
 	reqlTime.seconds += 1;
 }
 
-while(!terminate) {
-	if(rand()%100 <= THRESHOLD) {
+while(terminate != 1) {
+	// if the number is less than 20, terminate
+	randomNumber = rand() % 100;
+	if(randomNumber <= THRESHOLD) {
 		terminate = 1;
+		printf("child: %d is going to terminate: %d\n",getpid(), randomNumber);
+	} else if (randomNumber > 20 && randomNumber <= 60) {
+		printf("child: %d is going to write: %d\n",getpid(), randomNumber);
+	} else if (randomNumber > 60 && randomNumber <= 100) {
+		printf("child: %d is going to read: %d\n",getpid(), randomNumber);
+	} else {
+		printf("Huge error %d\n", randomNumber);
 	}
 	
 	/* Calculate Termination Time */

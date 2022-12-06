@@ -13,7 +13,7 @@
 #include <sys/shm.h>
 #include <semaphore.h>
 #include <fcntl.h>
-#define THRESHOLD 10
+#define THRESHOLD 20
 #define BOUND 500
 
 struct timer {
