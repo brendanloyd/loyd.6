@@ -74,9 +74,9 @@ int cycles = 0;
 int normTerm = 0;
 int pKill = -1; 
 float deadTermPercent = 0;
-message buf;
-buf.mtype = 1;
-buf.mint = 1000;
+struct message messageBuf;
+messageBuf.mtype = 1;
+messageBuf.mint = 1000;
 
 // random number generator
 srand(getpid() * time(NULL));
@@ -96,7 +96,7 @@ while ((choice = getopt (argc, argv, "h")) != -1)
 }
 
 //Setup key for message queue
-key_t key = ftok("./parent.c", 7654);
+key_t key = ftok("./oss.c", 7654);
         
 //Setup id for message queue
 int msqid = msgget(key, 0644|IPC_CREAT);
@@ -198,10 +198,7 @@ sprintf(termArgument, "%d", shmidT);
 sprintf(resArgument, "%d", shmidR);
 pid_t pid;
 
-if (msgsnd(msqid, &buf, sizeof(buf), 0) == -1) {
-        perror("msgsnd");
-	exit(1);
-}
+msgsnd(msqid, &messageBuf, sizeof(messageBuf), 0);
 do {
 
 	//Check if enough time has passed to spawn a child
@@ -236,16 +233,20 @@ do {
 			}
 		}
 	}
-	msgrcv(msqid, &buf, sizeof(buf), 1, 0);
+	msgrcv(msqid, &messageBuf, sizeof(messageBuf), 1, 0);
 	// check memory request and releases	
-		
-	// FIFO algorithm
-	
-	buf.mint = 1000;
-	if (msgsnd(msqid, &buf, sizeof(buf), 0) == -1) {
-        	perror("msgsnd");
-                exit(1);
+	if (messageBuf.mint == -1) {
+		fprintf(out_file, "Master: recieving termination message: %d\n", messageBuf.mint);
+	} else if (messageBuf.mint == 0) {
+		fprintf(out_file, "Master: recieving write message: %d\n", messageBuf.mint);
+	} else if (messageBuf.mint == 1) {
+                fprintf(out_file, "Master: recieving read message: %d\n", messageBuf.mint);
         }
+	// FIFO algorithm
+
+		
+	messageBuf.mint = 1000;
+	msgsnd(msqid, &messageBuf, sizeof(messageBuf), 0);
 	//check for terminating children
 	sem_wait(semT);
 	for(i = 0; i < maxChildren; i++) {
@@ -300,6 +301,10 @@ sem_unlink("semT");
 sem_close(semT);
 sem_unlink("semC");
 sem_close(semC);
+if (msgctl(msqid, IPC_RMID, NULL) == -1) {
+      	perror("msgctl");
+      	exit(1);
+}
 fclose(out_file);
 return 0;
 }

@@ -42,6 +42,12 @@ int termKey = atoi(argv[4]);
 int resKey = atoi(argv[5]);
 myIndex = index;
 signal(SIGINT, sigIntHandler);
+struct message messageBuf;
+messageBuf.mtype = 1;
+messageBuf.mint = 1000;
+
+key_t key = ftok("./oss.c", 7654);
+int msqid = msgget(key, 0644);
 
 srand(getpid() * time(NULL));
 
@@ -96,20 +102,27 @@ if (reqlTime.ns > 1000000000) {
 	reqlTime.seconds += 1;
 }
 
-while(terminate != 1) {
+while(terminate != 1) { 
+	msgrcv(msqid, &messageBuf, sizeof(messageBuf), 1, 0);
+
 	// if the number is less than 20, terminate
 	randomNumber = rand() % 100;
 	if(randomNumber <= THRESHOLD) {
 		terminate = 1;
-		printf("child: %d is going to terminate: %d\n",getpid(), randomNumber);
+		messageBuf.mint = -1;
+		//printf("child: %d is going to terminate: %d\n",getpid(), randomNumber);
 	} else if (randomNumber > 20 && randomNumber <= 60) {
-		printf("child: %d is going to write: %d\n",getpid(), randomNumber);
+		//printf("child: %d is going to write: %d\n",getpid(), randomNumber);
+		messageBuf.mint = 0;
 	} else if (randomNumber > 60 && randomNumber <= 100) {
-		printf("child: %d is going to read: %d\n",getpid(), randomNumber);
-	} else {
-		printf("Huge error %d\n", randomNumber);
+		//printf("child: %d is going to read: %d\n",getpid(), randomNumber);
+		messageBuf.mint = 1;
 	}
-	
+	messageBuf.mtype = 1;	
+	if (msgsnd(msqid, &messageBuf, sizeof(messageBuf), 0) == -1) {
+        	perror("msgsnd");
+                exit(1);
+        }
 	/* Calculate Termination Time */
 	termTime.ns = shmTimer->ns + rand()%250000000;
 	termTime.seconds = shmTimer->seconds;
@@ -149,6 +162,11 @@ if(errno == -1) {
 errno = shmdt(shmP);
 if(errno == -1) {
 	printf("USER_PROC: shmdt(shmR)\n");
+}
+
+if (msgctl(msqid, IPC_RMID, NULL) == -1) {
+        perror("msgctl");
+        exit(1);
 }
 //exit(0);
 return 0;
