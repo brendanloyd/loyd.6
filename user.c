@@ -46,8 +46,8 @@ struct message messageBuf;
 messageBuf.mtype = 1;
 messageBuf.mint = 1000;
 
-key_t key = ftok("./oss.c", 7654);
-int msqid = msgget(key, 0644);
+key_t key = ftok("./oss.c", 'B');
+int msqid = msgget(key, PERMS | IPC_CREAT);
 
 srand(getpid() * time(NULL));
 
@@ -104,7 +104,7 @@ if (reqlTime.ns > 1000000000) {
 
 while(terminate != 1) { 
 	msgrcv(msqid, &messageBuf, sizeof(messageBuf), 1, 0);
-
+	printf("inside critical section\n");
 	// if the number is less than 20, terminate
 	randomNumber = rand() % 100;
 	if(randomNumber <= THRESHOLD) {
@@ -118,6 +118,7 @@ while(terminate != 1) {
 		//printf("child: %d is going to read: %d\n",getpid(), randomNumber);
 		messageBuf.mint = 1;
 	}
+	messageBuf.pid = getpid();
 	messageBuf.mtype = 1;	
 	if (msgsnd(msqid, &messageBuf, sizeof(messageBuf), 0) == -1) {
         	perror("msgsnd");
@@ -164,10 +165,6 @@ if(errno == -1) {
 	printf("USER_PROC: shmdt(shmR)\n");
 }
 
-if (msgctl(msqid, IPC_RMID, NULL) == -1) {
-        perror("msgctl");
-        exit(1);
-}
-//exit(0);
+msgctl(msqid, IPC_RMID, NULL);
 return 0;
 }

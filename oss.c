@@ -77,7 +77,7 @@ float deadTermPercent = 0;
 struct message messageBuf;
 messageBuf.mtype = 1;
 messageBuf.mint = 1000;
-
+messageBuf.pid = getpid();
 // random number generator
 srand(getpid() * time(NULL));
 
@@ -96,10 +96,10 @@ while ((choice = getopt (argc, argv, "h")) != -1)
 }
 
 //Setup key for message queue
-key_t key = ftok("./oss.c", 7654);
+key_t key = ftok("./oss.c", 'B');
         
 //Setup id for message queue
-int msqid = msgget(key, 0644|IPC_CREAT);
+int msqid = msgget(key, PERMS | IPC_CREAT);
 
 //Memory allocation
 shmidTime = shmget(keyTime, sizeof(struct timer), IPC_CREAT | 0666);
@@ -198,11 +198,19 @@ sprintf(termArgument, "%d", shmidT);
 sprintf(resArgument, "%d", shmidR);
 pid_t pid;
 
+pid = fork();
+if(pid == 0) {
+        pid = getpid();
+        shmC[i] = pid;
+	execl("./user", "user", timeArgument, childArgument, indexArgument, termArgument, resArgument, (char*)0);
+}
+
+
 msgsnd(msqid, &messageBuf, sizeof(messageBuf), 0);
 do {
 
 	//Check if enough time has passed to spawn a child
-	if(shmTimer->seconds >= nextProc.seconds && shmTimer->ns >= nextProc.ns) {
+	/*if(shmTimer->seconds >= nextProc.seconds && shmTimer->ns >= nextProc.ns) {
 		
 		// Check shmC for first unused process
 		sem_wait(semC);
@@ -232,19 +240,19 @@ do {
 				execl("./user", "user", timeArgument, childArgument, indexArgument, termArgument, resArgument, (char*)0);
 			}
 		}
-	}
+	}*/
 	msgrcv(msqid, &messageBuf, sizeof(messageBuf), 1, 0);
 	// check memory request and releases	
 	if (messageBuf.mint == -1) {
-		fprintf(out_file, "Master: recieving termination message: %d\n", messageBuf.mint);
+		fprintf(out_file, "Master: recieving termination message: %d from child: %d at time: %d:%d\n", messageBuf.mint, messageBuf.pid, shmTimer->seconds, shmTimer->ns);
 	} else if (messageBuf.mint == 0) {
-		fprintf(out_file, "Master: recieving write message: %d\n", messageBuf.mint);
+		fprintf(out_file, "Master: recieving write message: %d from child: %d at time: %d:%d\n", messageBuf.mint, messageBuf.pid, shmTimer->seconds, shmTimer->ns);
 	} else if (messageBuf.mint == 1) {
-                fprintf(out_file, "Master: recieving read message: %d\n", messageBuf.mint);
+                fprintf(out_file, "Master: recieving read message: %d from child %d at time: %d:%d\n", messageBuf.mint, messageBuf.pid, shmTimer->seconds, shmTimer->ns);
         }
 	// FIFO algorithm
 
-		
+	messageBuf.pid = getpid();	
 	messageBuf.mint = 1000;
 	msgsnd(msqid, &messageBuf, sizeof(messageBuf), 0);
 	//check for terminating children
@@ -283,12 +291,8 @@ for(i = 0; i < maxChildren; i++) {
 		normTerm--;
 	}
 }
-//print results
-printf("Number of Normally Terminated Processes: %d\n", normTerm);
 
 //Clear memory and close file
-//shmdt(shmTimer);
-//shmctl(shmidT, IPC_RMID, NULL);
 shmdt(shmC);
 shmctl(shmidC, IPC_RMID, NULL);
 shmdt(shmT);
@@ -301,10 +305,7 @@ sem_unlink("semT");
 sem_close(semT);
 sem_unlink("semC");
 sem_close(semC);
-if (msgctl(msqid, IPC_RMID, NULL) == -1) {
-      	perror("msgctl");
-      	exit(1);
-}
+msgctl(msqid, IPC_RMID, NULL);
 fclose(out_file);
 return 0;
 }

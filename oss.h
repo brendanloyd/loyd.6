@@ -14,6 +14,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #define DDA 100000
+#define PERMS 0644
 
 struct timer {
 	unsigned int ns;
@@ -23,6 +24,7 @@ struct timer {
 struct message {
 	long mtype;
 	int mint;
+	pid_t pid;
 };
 
 struct page {

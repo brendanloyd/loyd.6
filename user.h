@@ -13,6 +13,7 @@
 #include <sys/shm.h>
 #include <semaphore.h>
 #include <fcntl.h>
+#define PERMS 0644
 #define THRESHOLD 20
 #define BOUND 500
 
@@ -24,6 +25,7 @@ struct timer {
 struct message {
 	long mtype;
 	int mint;
+	pid_t pid;
 };
 
 struct page {
